@@ -1,14 +1,9 @@
-/*
-*	David Regimbal (c) 2015
-*   Login to XenForo with XenAPI
-*/
 (function () {
 
   Meteor.startup(function () {
     var config = Accounts.loginServiceConfiguration.findOne({service: 'xenforo'});
     if (!config) {
-	  // Swap clientId with your API key
-      Accounts.loginServiceConfiguration.insert({ service: 'xenforo', clientId: 'daef43yDFSgettg5m38g024ghfrprpsaf5r23GBRffrwefrgh344gfarg9a', loginStyle: 'redirect'});
+      Accounts.loginServiceConfiguration.insert({ service: 'xenforo', clientId: 'API_KEY', loginStyle: 'redirect'});
     }	
   });
 
@@ -19,9 +14,8 @@
 	if (!options.xenforo && !options.username && !options.password){
 		return undefined; // don't handle
 	}
-    
-	// Swap out URL for yout distro
-    var url = 'https://halocustoms.com/api.php?action=authenticate&username=' + options.username + '&password=' + options.password;
+      
+    var url = 'https://xenforo.com/api.php?action=authenticate&username=' + options.username + '&password=' + options.password;
     var request = new Future();
 	
 	
@@ -37,7 +31,7 @@
 
 				var hash = data.hash;
 				
-				url2 = 'https://halocustoms.com/api.php?action=getUser&hash=' + options.username + ':' + hash;
+				url2 = 'https://xenforo.com/api.php?action=getUser&hash=' + options.username + ':' + hash;
 				
 				HTTP.get(url2, function(err2,res2){
 					
@@ -52,17 +46,26 @@
 					serviceData = {
 						id: data2.user_id,
 						token: stampedToken.token,
-						username: data2.username,
-						email: data2.email,
-						timezone: data2.timezone,
-						friend_count: data2.friend_count,
-						visable: data2.visable,
-						is_banned: data2.is_banned
+						hash: hash
+					};
+					options = {
+						profile: {
+							username: data2.username,
+							email: data2.email,
+							timezone: data2.timezone,
+							friend_count: data2.friend_count,
+							visable: data2.visable,
+							is_banned: data2.is_banned,
+							is_staff: data2.is_staff,
+							is_moderator: data2.is_moderator,
+							is_admin: data2.is_admin,
+							trophy_points: data2.trophy_points
+						}
 					};
 					
-					Accounts.updateOrCreateUserFromExternalService('xenforo',serviceData);
+					Accounts.updateOrCreateUserFromExternalService('xenforo',serviceData, options);
 
-					var mrt_user = Meteor.users.findOne({"services.xenforo.username":data2.username});
+					var mrt_user = Meteor.users.findOne({"profile.username":data2.username});
 
 					request.return({userId:mrt_user._id,token:stampedToken.token});
 
